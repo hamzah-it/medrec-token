@@ -60,8 +60,6 @@ contract PHRNFT is ERC721 {
     struct MedRec {
         string dataHash;
         string icd10Code;
-        address temporaryAccess;
-        uint256 accessExpiry;
     }
 
     mapping(uint256 => MedRec) public medRecords;
@@ -82,39 +80,23 @@ contract PHRNFT is ERC721 {
     function mint(
         address to,
         string memory dataHash,
-        string memory tokenURI,
+        string memory _tokenURI,
         string memory icd10Code
     ) external onlyOwner returns (uint256) {
         uint256 tokenId = tokenCounter;
         _mint(to, tokenId);
-        _tokenURIs[tokenId] = tokenURI;
+        _tokenURIs[tokenId] = _tokenURI;
 
         medRecords[tokenId] = MedRec({
             dataHash: dataHash,
-            icd10Code: icd10Code,
-            temporaryAccess: address(0),
-            accessExpiry: 0
+            icd10Code: icd10Code
         });
 
         tokenCounter++;
         return tokenId;
     }
 
-    function grantTemporaryAccess(uint256 tokenId, address healthcareProvider, uint256 duration) external {
-        require(msg.sender == _ownerOf[tokenId], "not owner");
-        medRecords[tokenId].temporaryAccess = healthcareProvider;
-        medRecords[tokenId].accessExpiry = block.timestamp + duration;
-    }
-
-    function canAccess(uint256 tokenId, address requester) public view returns (bool) {
-        MedRec memory record = medRecords[tokenId];
-        if (requester == _ownerOf[tokenId]) return true;
-        if (requester == record.temporaryAccess && block.timestamp <= record.accessExpiry) return true;
-        return false;
-    }
-
     function getMedicalRecord(uint256 tokenId) public view returns (string memory) {
-        require(canAccess(tokenId, msg.sender), "no access");
         return medRecords[tokenId].dataHash;
     }
 
