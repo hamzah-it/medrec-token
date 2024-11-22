@@ -58,8 +58,8 @@ contract ERC721 is IERC721 {
 
 contract PHRNFT is ERC721 {
     struct MedRec {
-        string dataHash;
-        string icd10Code;
+        string encryptedData; // Hash metadata di IPFS yang telah dienkripsi
+        string icd10Code; // Kode ICD-10 diagnosis
     }
 
     mapping(uint256 => MedRec) public medRecords;
@@ -79,7 +79,7 @@ contract PHRNFT is ERC721 {
 
     function mint(
         address to,
-        string memory dataHash,
+        string memory encryptedData,
         string memory _tokenURI,
         string memory icd10Code
     ) external onlyOwner returns (uint256) {
@@ -88,7 +88,7 @@ contract PHRNFT is ERC721 {
         _tokenURIs[tokenId] = _tokenURI;
 
         medRecords[tokenId] = MedRec({
-            dataHash: dataHash,
+            encryptedData: encryptedData,
             icd10Code: icd10Code
         });
 
@@ -97,7 +97,8 @@ contract PHRNFT is ERC721 {
     }
 
     function getMedicalRecord(uint256 tokenId) public view returns (string memory) {
-        return medRecords[tokenId].dataHash;
+        require(_ownerOf[tokenId] != address(0), "token doesn't exist");
+        return medRecords[tokenId].encryptedData;
     }
 
     function tokenURI(uint256 tokenId) external view override returns (string memory) {

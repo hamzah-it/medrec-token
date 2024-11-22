@@ -1,0 +1,11 @@
+{
+  "name": "PHR Token #123",
+  "description": "This token represents a personal health record NFT.",
+  "image": "ipfs://QmVNUbQdpBWJUiyADTDQ7HxgBAQpszzAZk9T1M7kowc4Pv",
+  "attributes": [
+    {
+      "trait_type": "Token Type",
+      "value": "Health Record NFT"
+    }
+  ]
+}

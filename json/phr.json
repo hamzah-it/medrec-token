@@ -1,0 +1,91 @@
+{
+    "patient": {
+      "id": "123456789",
+      "name": "John Doe",
+      "gender": "Male",
+      "date_of_birth": "1990-05-15",
+      "contact": {
+        "email": "johndoe@example.com",
+        "phone": "+62-812-3456-7890"
+      }
+    },
+    "visit": {
+      "id": "V123456",
+      "date": "2024-11-13",
+      "provider": "General Hospital",
+      "department": "Internal Medicine",
+      "attending_physician": "Dr. Jane Smith",
+      "reason_for_visit": "Routine checkup and complaints of mild chest pain."
+    },
+    "diagnosis": {
+      "icd10_code": "I20.9",
+      "description": "Angina pectoris, unspecified"
+    },
+    "procedures": [
+      {
+        "procedure_id": "P001",
+        "description": "Electrocardiogram (ECG)",
+        "date": "2024-11-13",
+        "results": "Normal sinus rhythm, no ST elevation."
+      },
+      {
+        "procedure_id": "P002",
+        "description": "Chest X-ray",
+        "date": "2024-11-13",
+        "results": "No acute cardiopulmonary abnormalities."
+      }
+    ],
+    "prescriptions": [
+      {
+        "medication": "Aspirin 81 mg",
+        "dosage": "1 tablet daily",
+        "start_date": "2024-11-13",
+        "end_date": "2024-12-13",
+        "notes": "To prevent blood clots."
+      },
+      {
+        "medication": "Atorvastatin 20 mg",
+        "dosage": "1 tablet daily",
+        "start_date": "2024-11-13",
+        "end_date": "Indefinite",
+        "notes": "For cholesterol management."
+      }
+    ],
+    "test_results": [
+      {
+        "test": "Blood Pressure",
+        "date": "2024-11-13",
+        "value": "130/85 mmHg",
+        "notes": "Prehypertensive range."
+      },
+      {
+        "test": "Lipid Panel",
+        "date": "2024-11-13",
+        "results": {
+          "total_cholesterol": "200 mg/dL",
+          "hdl": "50 mg/dL",
+          "ldl": "130 mg/dL",
+          "triglycerides": "150 mg/dL"
+        },
+        "notes": "Elevated LDL, borderline total cholesterol."
+      }
+    ],
+    "allergies": [
+      {
+        "substance": "Penicillin",
+        "reaction": "Hives and swelling",
+        "severity": "Severe"
+      }
+    ],
+    "follow_up": {
+      "recommended_date": "2025-01-15",
+      "notes": "Follow-up visit for cholesterol management and BP monitoring."
+    },
+    "emergency_contact": {
+      "name": "Jane Doe",
+      "relationship": "Spouse",
+      "phone": "+62-812-9876-5432"
+    },
+    "additional_notes": "Patient advised to maintain a low-fat diet and engage in regular physical activity."
+  }
+  
