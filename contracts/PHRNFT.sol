@@ -1,108 +1,73 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.27;
 
-interface IERC165 {
-    function supportsInterface(bytes4 interfaceID) external view returns (bool);
-}
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface IERC721 is IERC165 {
-    function balanceOf(address owner) external view returns (uint256 balance);
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-    function tokenURI(uint256 tokenId) external view returns (string memory);
-}
-
-contract ERC721 is IERC721 {
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 indexed id
-    );
-
-    mapping(uint256 => address) internal _ownerOf;
-    mapping(address => uint256) internal _balanceOf;
-
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external pure returns (bool) {
-        return
-            interfaceId == type(IERC721).interfaceId ||
-            interfaceId == type(IERC165).interfaceId;
-    }
-
-    function balanceOf(address owner) external view override returns (uint256) {
-        require(owner != address(0), "owner = zero address");
-        return _balanceOf[owner];
-    }
-
-    function ownerOf(
-        uint256 tokenId
-    ) external view override returns (address owner) {
-        owner = _ownerOf[tokenId];
-        require(owner != address(0), "token doesn't exist");
-    }
-
-    function _mint(address to, uint256 tokenId) internal {
-        require(to != address(0), "mint to zero address");
-        require(_ownerOf[tokenId] == address(0), "already minted");
-
-        _balanceOf[to]++;
-        _ownerOf[tokenId] = to;
-
-        emit Transfer(address(0), to, tokenId);
-    }
-
-    function tokenURI(
-        uint256 tokenId
-    ) external view virtual override returns (string memory) {}
-}
-
-contract PHRNFT is ERC721 {
+/**
+ * @title PHRNFT
+ * @dev ERC721 NFT for Personal Health Records (PHR) with associated metadata.
+ */
+contract PHRNFT is ERC721, Ownable {
+    /// @dev Structure to store medical record metadata
     struct MedRec {
-        string encryptedData; // Hash metadata di IPFS yang telah dienkripsi
-        string icd10Code; // Kode ICD-10 diagnosis
+        string encryptedData; // Encrypted medical data (e.g., IPFS hash)
+        string icd10Code;     // ICD-10 diagnosis code
     }
 
-    mapping(uint256 => MedRec) public medRecords;
-    mapping(uint256 => string) private _tokenURIs;
+    /// @dev Mapping from token ID to medical records
+    mapping(uint256 => MedRec) private _medRecords;
 
-    address public contractOwner;
-    uint256 public tokenCounter;
+    /// @dev Counter for token IDs
+    uint256 private _tokenCounter;
 
-    modifier onlyOwner() {
-        require(msg.sender == contractOwner, "not contract owner");
-        _;
-    }
+    /**
+     * @dev Constructor to initialize the NFT collection with name and symbol.
+     */
+    constructor() ERC721("Personal Health Record NFT", "PHRNFT") {}
 
-    constructor() {
-        contractOwner = msg.sender;
-    }
-
+    /**
+     * @notice Mint a new token with associated medical record metadata.
+     * @param to Address to receive the token.
+     * @param encryptedData Encrypted medical data stored off-chain (e.g., IPFS).
+     * @param icd10Code ICD-10 diagnosis code associated with the record.
+     * @return tokenId The ID of the minted token.
+     */
     function mint(
         address to,
         string memory encryptedData,
-        string memory _tokenURI,
         string memory icd10Code
     ) external onlyOwner returns (uint256) {
-        uint256 tokenId = tokenCounter;
-        _mint(to, tokenId);
-        _tokenURIs[tokenId] = _tokenURI;
+        require(to != address(0), "PHRNFT: mint to the zero address");
 
-        medRecords[tokenId] = MedRec({
+        uint256 tokenId = _tokenCounter;
+
+        // Mint the token to the recipient
+        _safeMint(to, tokenId);
+
+        // Store medical record metadata
+        _medRecords[tokenId] = MedRec({
             encryptedData: encryptedData,
             icd10Code: icd10Code
         });
 
-        tokenCounter++;
+        // Increment the token ID counter
+        _tokenCounter++;
+
         return tokenId;
     }
 
-    function getMedicalRecord(uint256 tokenId) public view returns (string memory) {
-        require(_ownerOf[tokenId] != address(0), "token doesn't exist");
-        return medRecords[tokenId].encryptedData;
-    }
-
-    function tokenURI(uint256 tokenId) external view override returns (string memory) {
-        require(_ownerOf[tokenId] != address(0), "token doesn't exist");
-        return _tokenURIs[tokenId];
+    /**
+     * @notice Retrieve medical record metadata for a specific token ID.
+     * @param tokenId The ID of the token to query.
+     * @return encryptedData The encrypted medical data.
+     * @return icd10Code The ICD-10 diagnosis code.
+     */
+    function getMedicalRecord(
+        uint256 tokenId
+    ) external view returns (string memory encryptedData, string memory icd10Code) {
+        require(_exists(tokenId), "PHRNFT: token does not exist");
+        MedRec memory record = _medRecords[tokenId];
+        return (record.encryptedData, record.icd10Code);
     }
 }
