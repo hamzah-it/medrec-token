@@ -1,73 +1,133 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-/**
- * @title PHRNFT
- * @dev ERC721 NFT for Personal Health Records (PHR) with associated metadata.
- */
-contract PHRNFT is ERC721, Ownable {
-    /// @dev Structure to store medical record metadata
+interface IERC721 {
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint256 indexed tokenId
+    );
+
+    function balanceOf(address owner) external view returns (uint256 balance);
+
+    function ownerOf(uint256 tokenId) external view returns (address owner);
+}
+
+contract PHRNFT is IERC721, ChainlinkClient {
+    using Chainlink for Chainlink.Request;
+
     struct MedRec {
         string encryptedData; // Encrypted medical data (e.g., IPFS hash)
-        string icd10Code;     // ICD-10 diagnosis code
+        string icd10Code; // ICD-10 diagnosis code
     }
 
-    /// @dev Mapping from token ID to medical records
+    mapping(uint256 => address) private _owners;
+    mapping(address => uint256) private _balances;
     mapping(uint256 => MedRec) private _medRecords;
 
-    /// @dev Counter for token IDs
     uint256 private _tokenCounter;
 
-    /**
-     * @dev Constructor to initialize the NFT collection with name and symbol.
-     */
-    constructor() ERC721("Personal Health Record NFT", "PHRNFT") {}
+    // Chainlink variables
+    address private oracle;
+    bytes32 private jobId;
+    uint256 private fee;
 
-    /**
-     * @notice Mint a new token with associated medical record metadata.
-     * @param to Address to receive the token.
-     * @param encryptedData Encrypted medical data stored off-chain (e.g., IPFS).
-     * @param icd10Code ICD-10 diagnosis code associated with the record.
-     * @return tokenId The ID of the minted token.
-     */
+    event ClaimProcessed(uint256 indexed tokenId, uint256 claimAmount, address owner);
+
+    constructor(address _oracle, bytes32 _jobId, uint256 _fee, address _link) {
+        oracle = _oracle;
+        jobId = _jobId;
+        fee = _fee;
+        _setChainlinkToken(_link);
+    }
+
+    function balanceOf(address owner) external view override returns (uint256) {
+        require(owner != address(0), "PHRNFT: balance query for zero address");
+        return _balances[owner];
+    }
+
+    function ownerOf(uint256 tokenId) public view override returns (address) {
+        address owner = _owners[tokenId];
+        require(owner != address(0), "PHRNFT: owner query for nonexistent token");
+        return owner;
+    }
+
     function mint(
         address to,
-        string memory encryptedData,
-        string memory icd10Code
-    ) external onlyOwner returns (uint256) {
+        string calldata encryptedData,
+        string calldata icd10Code
+    ) external returns (uint256) {
         require(to != address(0), "PHRNFT: mint to the zero address");
 
         uint256 tokenId = _tokenCounter;
+        _owners[tokenId] = to;
+        _balances[to]++;
+        _medRecords[tokenId] = MedRec(encryptedData, icd10Code);
 
-        // Mint the token to the recipient
-        _safeMint(to, tokenId);
+        emit Transfer(address(0), to, tokenId);
 
-        // Store medical record metadata
-        _medRecords[tokenId] = MedRec({
-            encryptedData: encryptedData,
-            icd10Code: icd10Code
-        });
-
-        // Increment the token ID counter
-        _tokenCounter++;
+        unchecked {
+            _tokenCounter++;
+        }
 
         return tokenId;
     }
 
-    /**
-     * @notice Retrieve medical record metadata for a specific token ID.
-     * @param tokenId The ID of the token to query.
-     * @return encryptedData The encrypted medical data.
-     * @return icd10Code The ICD-10 diagnosis code.
-     */
     function getMedicalRecord(
         uint256 tokenId
-    ) external view returns (string memory encryptedData, string memory icd10Code) {
+    ) external view returns (string memory, string memory) {
         require(_exists(tokenId), "PHRNFT: token does not exist");
         MedRec memory record = _medRecords[tokenId];
         return (record.encryptedData, record.icd10Code);
     }
+
+    function requestClaim(uint256 tokenId) public returns (bytes32 requestId) {
+        require(_exists(tokenId), "PHRNFT: token does not exist");
+
+        MedRec memory record = _medRecords[tokenId];
+        Chainlink.Request memory request = _buildChainlinkRequest(
+            jobId,
+            address(this),
+            this.fulfillClaim.selector
+        );
+
+        // Pass icd10Code and tokenId to the oracle
+        request._add("icd10Code", record.icd10Code);
+        request._addUint("tokenId", tokenId);
+
+        // Send request to Chainlink Oracle
+        return _sendChainlinkRequestTo(oracle, request, fee);
+    }
+
+    function fulfillClaim(
+        bytes32 _requestId,
+        uint256 tokenId,
+        bool claimable,
+        uint256 claimAmount
+    ) public recordChainlinkFulfillment(_requestId) {
+        require(_exists(tokenId), "PHRNFT: token does not exist");
+        require(claimable, "PHRNFT: Claim is not valid");
+
+        address owner = _owners[tokenId];
+        (bool success, ) = owner.call{value: claimAmount}("");
+        require(success, "PHRNFT: Transfer failed");
+
+        emit ClaimProcessed(tokenId, claimAmount, owner);
+    }
+
+    function _exists(uint256 tokenId) internal view returns (bool) {
+        return _owners[tokenId] != address(0);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
+        return interfaceId == type(IERC721).interfaceId;
+    }
+
+    function tokenCounter() external view returns (uint256) {
+        return _tokenCounter;
+    }
+
+    receive() external payable {}
 }

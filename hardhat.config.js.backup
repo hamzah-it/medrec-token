@@ -16,13 +16,6 @@ module.exports = {
     },
   },
   networks: {
-    hardhat: {
-      chainId: 31337, // Default chain ID untuk jaringan Hardhat
-    },
-    localhost: {
-      url: "http://127.0.0.1:8545", // Untuk node lokal Hardhat
-      chainId: 31337, // Sama dengan jaringan Hardhat
-    },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [SEPOLIA_PRIVATE_KEY],

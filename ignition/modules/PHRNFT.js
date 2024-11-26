@@ -1,11 +1,15 @@
-// This setup uses Hardhat Ignition to manage smart contract deployments.
-// Learn more about it at https://hardhat.org/ignition
-
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
+const { encodeBytes32String, parseEther, ZeroAddress } = require("ethers");
 
 module.exports = buildModule("PHRNFTModule", (m) => {
-  // Define the contract deployment
-  const phrNFT = m.contract("PHRNFT", []); // No constructor arguments required
+  // Dummy oracle configuration
+  const oracleAddress = ZeroAddress; // Replace with actual oracle address if available
+  const jobId = encodeBytes32String("testJob"); // Correct encoding for Ethers v6
+  const fee = parseEther("0.1"); // Fee in LINK tokens
+  const linkTokenAddress = ZeroAddress; // Replace with actual LINK token address
 
-  return { phrNFT }; // Return deployed contract
+  // Deploy the PHRNFT contract with constructor arguments
+  const phrNFT = m.contract("PHRNFT", [oracleAddress, jobId, fee, linkTokenAddress]);
+
+  return { phrNFT };
 });
