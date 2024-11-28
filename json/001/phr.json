@@ -1,0 +1,90 @@
+{
+    "patient": {
+      "id": "987654321",
+      "name": "Alice Smith",
+      "gender": "Female",
+      "date_of_birth": "1985-08-22",
+      "contact": {
+        "email": "alicesmith@example.com",
+        "phone": "+62-812-9876-5432"
+      }
+    },
+    "visit": {
+      "id": "V654321",
+      "date": "2024-11-12",
+      "provider": "City Medical Center",
+      "department": "Cardiology",
+      "attending_physician": "Dr. Michael Brown",
+      "reason_for_visit": "Follow-up on hypertension and mild shortness of breath."
+    },
+    "diagnosis": {
+      "icd10_code": "I10",
+      "description": "Essential (primary) hypertension"
+    },
+    "procedures": [
+      {
+        "procedure_id": "P101",
+        "description": "Echocardiogram",
+        "date": "2024-11-12",
+        "results": "Left ventricular hypertrophy, normal ejection fraction."
+      },
+      {
+        "procedure_id": "P102",
+        "description": "Stress Test",
+        "date": "2024-11-12",
+        "results": "No evidence of ischemia, moderate exercise tolerance."
+      }
+    ],
+    "prescriptions": [
+      {
+        "medication": "Lisinopril 10 mg",
+        "dosage": "1 tablet daily",
+        "start_date": "2024-11-12",
+        "end_date": "Indefinite",
+        "notes": "For blood pressure control."
+      },
+      {
+        "medication": "Metoprolol 25 mg",
+        "dosage": "1 tablet daily",
+        "start_date": "2024-11-12",
+        "end_date": "2025-02-12",
+        "notes": "To manage heart rate."
+      }
+    ],
+    "test_results": [
+      {
+        "test": "Blood Pressure",
+        "date": "2024-11-12",
+        "value": "140/90 mmHg",
+        "notes": "Stage 1 hypertension."
+      },
+      {
+        "test": "Renal Function Panel",
+        "date": "2024-11-12",
+        "results": {
+          "bun": "20 mg/dL",
+          "creatinine": "1.0 mg/dL",
+          "gfr": "85 mL/min/1.73m2"
+        },
+        "notes": "Normal renal function."
+      }
+    ],
+    "allergies": [
+      {
+        "substance": "Sulfa Drugs",
+        "reaction": "Rash and itching",
+        "severity": "Moderate"
+      }
+    ],
+    "follow_up": {
+      "recommended_date": "2025-02-12",
+      "notes": "Monitor BP and reassess medication efficacy."
+    },
+    "emergency_contact": {
+      "name": "Robert Smith",
+      "relationship": "Husband",
+      "phone": "+62-812-6543-9876"
+    },
+    "additional_notes": "Patient advised to reduce sodium intake and engage in low-impact aerobic exercises."
+  }
+  

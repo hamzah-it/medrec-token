@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
-
 interface IERC721 {
     event Transfer(
         address indexed from,
@@ -15,12 +13,17 @@ interface IERC721 {
     function ownerOf(uint256 tokenId) external view returns (address owner);
 }
 
-contract PHRNFT is IERC721, ChainlinkClient {
-    using Chainlink for Chainlink.Request;
+interface IClaimOracle {
+    function requestClaim(
+        uint256 tokenId,
+        string memory icd10Code
+    ) external payable returns (bytes32);
+}
 
+contract PHRNFT is IERC721 {
     struct MedRec {
-        string encryptedData; // Encrypted medical data (e.g., IPFS hash)
-        string icd10Code; // ICD-10 diagnosis code
+        string encryptedData; // Encrypted CID that stores phr.json
+        string icd10Code;
     }
 
     mapping(uint256 => address) private _owners;
@@ -29,18 +32,12 @@ contract PHRNFT is IERC721, ChainlinkClient {
 
     uint256 private _tokenCounter;
 
-    // Chainlink variables
-    address private oracle;
-    bytes32 private jobId;
-    uint256 private fee;
+    address public immutable claimOracle;
 
     event ClaimProcessed(uint256 indexed tokenId, uint256 claimAmount, address owner);
 
-    constructor(address _oracle, bytes32 _jobId, uint256 _fee, address _link) {
-        oracle = _oracle;
-        jobId = _jobId;
-        fee = _fee;
-        _setChainlinkToken(_link);
+    constructor(address _claimOracle) {
+        claimOracle = _claimOracle;
     }
 
     function balanceOf(address owner) external view override returns (uint256) {
@@ -83,30 +80,24 @@ contract PHRNFT is IERC721, ChainlinkClient {
         return (record.encryptedData, record.icd10Code);
     }
 
-    function requestClaim(uint256 tokenId) public returns (bytes32 requestId) {
+    function requestClaim(uint256 tokenId) public payable {
         require(_exists(tokenId), "PHRNFT: token does not exist");
 
         MedRec memory record = _medRecords[tokenId];
-        Chainlink.Request memory request = _buildChainlinkRequest(
-            jobId,
-            address(this),
-            this.fulfillClaim.selector
+
+        // Call ClaimOracle contract to request claim
+        IClaimOracle(claimOracle).requestClaim{value: msg.value}(
+            tokenId,
+            record.icd10Code
         );
-
-        // Pass icd10Code and tokenId to the oracle
-        request._add("icd10Code", record.icd10Code);
-        request._addUint("tokenId", tokenId);
-
-        // Send request to Chainlink Oracle
-        return _sendChainlinkRequestTo(oracle, request, fee);
     }
 
-    function fulfillClaim(
-        bytes32 _requestId,
+    function processClaim(
         uint256 tokenId,
         bool claimable,
         uint256 claimAmount
-    ) public recordChainlinkFulfillment(_requestId) {
+    ) external {
+        require(msg.sender == claimOracle, "PHRNFT: Only oracle can process");
         require(_exists(tokenId), "PHRNFT: token does not exist");
         require(claimable, "PHRNFT: Claim is not valid");
 

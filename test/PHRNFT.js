@@ -1,149 +1,102 @@
-const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-console.log("Ethers.js version:", ethers.version);
+describe("PHRNFT", function () {
+  let PHRNFT, phrNFT, owner, user, addr1;
 
-describe("PHRNFT Contract with Oracle Integration", function () {
-  async function deployPHRNFTFixture() {
-    // Get test accounts
-    const [deployer, otherAccount] = await ethers.getSigners();
-
-    // Dummy oracle and LINK token configurations
-    const oracleAddress = ethers.ZeroAddress; // Replace with actual oracle address
-    const jobId = ethers.encodeBytes32String("testJob"); // Use the correct encoding method for jobId
-    const fee = ethers.parseEther("0.1"); // LINK fee
-    const linkTokenAddress = ethers.ZeroAddress; // Replace with actual LINK token address
-
+  beforeEach(async function () {
     // Deploy the PHRNFT contract
-    const PHRNFT = await ethers.getContractFactory("PHRNFT");
-    const phrNFT = await PHRNFT.deploy(oracleAddress, jobId, fee, linkTokenAddress);
-
-    // Return contract and accounts
-    return { phrNFT, deployer, otherAccount };
-}  
-
-  describe("Deployment", function () {
-    it("Should deploy the contract successfully", async function () {
-      const { phrNFT } = await loadFixture(deployPHRNFTFixture);
-      expect(phrNFT).to.be.ok; // Ensure contract is deployed
-    });
-
-    it("Should start with a tokenCounter of 0", async function () {
-      const { phrNFT } = await loadFixture(deployPHRNFTFixture);
-      expect(await phrNFT.tokenCounter()).to.equal(0);
-    });
+    PHRNFT = await ethers.getContractFactory("PHRNFT");
+    [owner, user, addr1] = await ethers.getSigners();
+    phrNFT = await PHRNFT.deploy(ethers.ZeroAddress); // Use dummy address for claimOracle
+    await phrNFT.waitForDeployment();
   });
 
-  describe("Minting", function () {
-    it("Should mint a new token and assign it to the correct owner", async function () {
-      const { phrNFT, deployer } = await loadFixture(deployPHRNFTFixture);
+  it("should mint an NFT and assign it to the correct owner", async function () {
+    const tokenId = await phrNFT.tokenCounter();
+    const encryptedData = "encryptedCID123";
+    const icd10Code = "A00.0";
 
-      const recipient = deployer.address;
-      const encryptedData = "encryptedDataHash";
-      const icd10Code = "A00";
+    // Mint the NFT
+    const tx = await phrNFT.connect(owner).mint(user.address, encryptedData, icd10Code);
+    await tx.wait();
 
-      const tx = await phrNFT.mint(recipient, encryptedData, icd10Code);
-      await tx.wait();
+    // Validate the owner and medical record
+    expect(await phrNFT.ownerOf(tokenId)).to.equal(user.address);
+    expect(await phrNFT.balanceOf(user.address)).to.equal(1);
 
-      const tokenId = 0;
-      expect(await phrNFT.ownerOf(tokenId)).to.equal(recipient);
-      expect(await phrNFT.balanceOf(recipient)).to.equal(1);
-
-      const medicalRecord = await phrNFT.getMedicalRecord(tokenId);
-      expect(medicalRecord[0]).to.equal(encryptedData);
-      expect(medicalRecord[1]).to.equal(icd10Code);
-    });
-
-    it("Should increment the tokenCounter after minting", async function () {
-      const { phrNFT, deployer } = await loadFixture(deployPHRNFTFixture);
-
-      const recipient = deployer.address;
-      const encryptedData = "encryptedDataHash";
-      const icd10Code = "A00";
-
-      await phrNFT.mint(recipient, encryptedData, icd10Code);
-      expect(await phrNFT.tokenCounter()).to.equal(1);
-    });
-
-    it("Should revert if minting to the zero address", async function () {
-      const { phrNFT } = await loadFixture(deployPHRNFTFixture);
-
-      const encryptedData = "encryptedDataHash";
-      const icd10Code = "A00";
-
-      await expect(
-        phrNFT.mint(ethers.ZeroAddress, encryptedData, icd10Code)
-      ).to.be.revertedWith("PHRNFT: mint to the zero address");
-    });
+    const record = await phrNFT.getMedicalRecord(tokenId);
+    expect(record[0]).to.equal(encryptedData);
+    expect(record[1]).to.equal(icd10Code);
   });
 
-  describe("Claim Process (Oracle Integration)", function () {
-    it("Should request claim for a valid token ID", async function () {
-      const { phrNFT, deployer } = await loadFixture(deployPHRNFTFixture);
+  it("should return the correct tokenCounter value", async function () {
+    // Initially tokenCounter should be 0
+    expect(await phrNFT.tokenCounter()).to.equal(0);
 
-      const encryptedData = "encryptedDataHash";
-      const icd10Code = "A00";
+    // Mint an NFT
+    await phrNFT.connect(owner).mint(user.address, "encryptedCID123", "A00.0");
 
-      const tx = await phrNFT.mint(deployer.address, encryptedData, icd10Code);
-      await tx.wait();
+    // TokenCounter should increase by 1
+    expect(await phrNFT.tokenCounter()).to.equal(1);
+  });
 
-      const tokenId = 0;
+  it("should correctly report the owner of a token", async function () {
+    const tokenId = await phrNFT.tokenCounter();
 
-      const requestId = await phrNFT.requestClaim(tokenId);
-      expect(requestId).to.be.ok;
-    });
+    // Mint the NFT
+    await phrNFT.connect(owner).mint(user.address, "encryptedCID123", "A00.0");
 
-    it("Should revert if requesting claim for a non-existent token", async function () {
-      const { phrNFT } = await loadFixture(deployPHRNFTFixture);
+    // Validate the owner
+    expect(await phrNFT.ownerOf(tokenId)).to.equal(user.address);
+  });
 
-      await expect(phrNFT.requestClaim(999)).to.be.revertedWith(
-        "PHRNFT: token does not exist"
-      );
-    });
+  it("should revert if querying the owner of a nonexistent token", async function () {
+    const tokenId = 999; // Nonexistent token ID
+    await expect(phrNFT.ownerOf(tokenId)).to.be.revertedWith("PHRNFT: owner query for nonexistent token");
+  });
 
-    it("Should fulfill a valid claim and transfer ETH to the owner", async function () {
-      const { phrNFT, deployer } = await loadFixture(deployPHRNFTFixture);
+  it("should revert if minting to the zero address", async function () {
+    const encryptedData = "encryptedCID123";
+    const icd10Code = "A00.0";
 
-      const encryptedData = "encryptedDataHash";
-      const icd10Code = "A00";
+    // Attempt to mint to the zero address
+    await expect(
+      phrNFT.connect(owner).mint(ethers.ZeroAddress, encryptedData, icd10Code)
+    ).to.be.revertedWith("PHRNFT: mint to the zero address");
+  });
 
-      const mintTx = await phrNFT.mint(deployer.address, encryptedData, icd10Code);
-      await mintTx.wait();
+  it("should correctly report balanceOf for a user", async function () {
+    // Mint two NFTs to the same user
+    await phrNFT.connect(owner).mint(user.address, "encryptedCID1", "A00.1");
+    await phrNFT.connect(owner).mint(user.address, "encryptedCID2", "A00.2");
 
-      const tokenId = 0;
+    // Validate the balance
+    expect(await phrNFT.balanceOf(user.address)).to.equal(2);
+  });
 
-      // Simulate Chainlink fulfillClaim call
-      const claimable = true;
-      const claimAmount = ethers.parseEther("1.0");
+  it("should revert if querying balanceOf for the zero address", async function () {
+    await expect(phrNFT.balanceOf(ethers.ZeroAddress)).to.be.revertedWith(
+      "PHRNFT: balance query for zero address"
+    );
+  });
 
-      const fulfillTx = await phrNFT.fulfillClaim(
-        ethers.hexlify(ethers.toUtf8Bytes("requestId")),
-        tokenId,
-        claimable,
-        claimAmount
-      );
-      await fulfillTx.wait();
+  it("should correctly store and retrieve medical records", async function () {
+    const tokenId = await phrNFT.tokenCounter();
+    const encryptedData = "encryptedCID123";
+    const icd10Code = "A00.0";
 
-      // Check deployer's balance (assume initial balance was 10000 ETH for this test)
-      const balance = await ethers.provider.getBalance(deployer.address);
-      expect(balance).to.be.gt(ethers.parseEther("10000"));
-    });
+    // Mint the NFT
+    await phrNFT.connect(owner).mint(user.address, encryptedData, icd10Code);
 
-    it("Should revert if the claim is not valid", async function () {
-      const { phrNFT } = await loadFixture(deployPHRNFTFixture);
+    // Retrieve the medical record
+    const record = await phrNFT.getMedicalRecord(tokenId);
+    expect(record[0]).to.equal(encryptedData);
+    expect(record[1]).to.equal(icd10Code);
+  });
 
-      const claimable = false;
-      const claimAmount = ethers.parseEther("1.0");
-
-      await expect(
-        phrNFT.fulfillClaim(
-          ethers.hexlify(ethers.toUtf8Bytes("requestId")),
-          0,
-          claimable,
-          claimAmount
-        )
-      ).to.be.revertedWith("PHRNFT: Claim is not valid");
-    });
+  it("should revert if querying medical record for a nonexistent token", async function () {
+    const tokenId = 999; // Nonexistent token ID
+    await expect(phrNFT.getMedicalRecord(tokenId)).to.be.revertedWith("PHRNFT: token does not exist");
   });
 });

@@ -1,0 +1,89 @@
+{
+    "patient": {
+      "id": "456789123",
+      "name": "William Johnson",
+      "gender": "Male",
+      "date_of_birth": "1975-03-10",
+      "contact": {
+        "email": "williamjohnson@example.com",
+        "phone": "+62-812-7654-3210"
+      }
+    },
+    "visit": {
+      "id": "V789123",
+      "date": "2024-11-15",
+      "provider": "Sunrise Clinic",
+      "department": "Orthopedics",
+      "attending_physician": "Dr. Emily Davis",
+      "reason_for_visit": "Chronic knee pain exacerbated by physical activity."
+    },
+    "diagnosis": {
+      "icd10_code": "M17.9",
+      "description": "Osteoarthritis of knee, unspecified"
+    },
+    "procedures": [
+      {
+        "procedure_id": "P201",
+        "description": "Knee X-ray",
+        "date": "2024-11-15",
+        "results": "Joint space narrowing and osteophyte formation."
+      },
+      {
+        "procedure_id": "P202",
+        "description": "MRI of Knee",
+        "date": "2024-11-15",
+        "results": "Meniscal degeneration and mild synovitis."
+      }
+    ],
+    "prescriptions": [
+      {
+        "medication": "Ibuprofen 400 mg",
+        "dosage": "1 tablet every 8 hours as needed",
+        "start_date": "2024-11-15",
+        "end_date": "2024-11-22",
+        "notes": "For pain and inflammation relief."
+      },
+      {
+        "medication": "Glucosamine and Chondroitin",
+        "dosage": "1 tablet twice daily",
+        "start_date": "2024-11-15",
+        "end_date": "2025-02-15",
+        "notes": "For joint health."
+      }
+    ],
+    "test_results": [
+      {
+        "test": "Physical Exam",
+        "date": "2024-11-15",
+        "value": "Decreased range of motion in the right knee",
+        "notes": "Pain on flexion and extension."
+      },
+      {
+        "test": "Blood Tests",
+        "date": "2024-11-15",
+        "results": {
+          "cbc": "Normal",
+          "esr": "20 mm/hr",
+          "crp": "5 mg/L"
+        },
+        "notes": "Mildly elevated inflammatory markers."
+      }
+    ],
+    "allergies": [
+      {
+        "substance": "Aspirin",
+        "reaction": "Stomach pain and nausea",
+        "severity": "Mild"
+      }
+    ],
+    "follow_up": {
+      "recommended_date": "2025-01-15",
+      "notes": "Evaluate knee condition and consider physical therapy."
+    },
+    "emergency_contact": {
+      "name": "Sarah Johnson",
+      "relationship": "Wife",
+      "phone": "+62-812-8765-4321"
+    },
+    "additional_notes": "Patient advised to avoid high-impact activities and start a low-resistance exercise program."
+  }  
